@@ -35,6 +35,10 @@ export const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [script, setScript] = useState("");
+  const [scriptBusy, setScriptBusy] = useState(false);
   const dragRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
 
@@ -83,6 +87,53 @@ export const App: React.FC = () => {
       catch (e) { console.error(e); }
     };
     inp.click();
+  };
+
+  // AI: turn a one-line brand description into a full PatternTitle scene.
+  const generateAI = async () => {
+    if (!aiPrompt.trim() || aiBusy) return;
+    setAiBusy(true); setVideoUrl(null); setStatus("Designing your scene with AI…");
+    try {
+      const res = await fetch(`${SERVER}/generate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: aiPrompt }) });
+      if (!res.ok) throw new Error(await res.text());
+      const s = await res.json();
+      const titles: TitleItem[] = (s.titles ?? []).map((t: any, i: number) => ({
+        id: `ai${Date.now()}_${i}`, kind: t.kind as TitleItem["kind"], text: String(t.text), x: t.x, y: t.y, size: t.size,
+      }));
+      setProps((p) => ({
+        ...p,
+        titles: titles.length ? titles : p.titles,
+        accent: s.accent ?? p.accent,
+        bgColor: s.bgColor ?? p.bgColor,
+        colors: Array.isArray(s.colors) && s.colors.length ? s.colors : p.colors,
+        density: s.density ?? p.density,
+        proximity: s.proximity ?? p.proximity,
+        seed: s.seed ?? p.seed,
+        shapes: Array.isArray(s.shapes) && s.shapes.length ? s.shapes : p.shapes,
+      }));
+      setSelectedId(titles[0]?.id ?? "");
+      setStatus("AI scene ready ✓ — drag, tweak, or Render to MP4.");
+    } catch (e) {
+      setStatus("AI error — is the server up (npm run server) and ANTHROPIC_API_KEY set?");
+      console.error(e);
+    } finally { setAiBusy(false); }
+  };
+
+  // AI: write a short voiceover script for the demo/brand video.
+  const writeScript = async () => {
+    if (scriptBusy) return;
+    const topic = aiPrompt.trim() || props.titles.map((t) => t.text).join(" ");
+    if (!topic) { setStatus("Type a brand/topic first."); return; }
+    setScriptBusy(true);
+    try {
+      const res = await fetch(`${SERVER}/script`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: topic }) });
+      if (!res.ok) throw new Error(await res.text());
+      const j = await res.json();
+      setScript(j.script ?? "");
+    } catch (e) {
+      setScript("Error — is the server up (npm run server) and ANTHROPIC_API_KEY set?");
+      console.error(e);
+    } finally { setScriptBusy(false); }
   };
 
   const render = async () => {
@@ -155,6 +206,27 @@ export const App: React.FC = () => {
       <aside style={S.sidebar}>
         {comp === "PatternTitle" ? (
         <>
+        <Section title="✨ AI Brand">
+          <textarea
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            placeholder="Describe your brand or topic — e.g. “Ember, a warm rustic specialty coffee roaster”"
+            rows={3}
+            style={{ width: "100%", resize: "vertical", background: "var(--bg)", color: "var(--input-text)", border: "1px solid var(--bar-empty)", borderRadius: 6, fontFamily: "inherit", fontSize: 14, padding: 10, boxSizing: "border-box" }}
+          />
+          <div style={{ display: "flex", gap: 16, marginTop: 10, alignItems: "center" }}>
+            <button className="link-btn accent" disabled={aiBusy || !aiPrompt.trim()} onClick={generateAI}>{aiBusy ? "Designing…" : "Generate Scene"}</button>
+            <button className="link-btn" disabled={scriptBusy} onClick={writeScript}>{scriptBusy ? "Writing…" : "Write Script"}</button>
+          </div>
+          <div style={{ ...S.status, marginTop: 8 }}>Type a description, then Generate — Claude designs the title, palette &amp; pattern. Everything stays editable.</div>
+          {script ? (
+            <div style={{ marginTop: 12 }}>
+              <textarea readOnly value={script} rows={8} style={{ width: "100%", resize: "vertical", background: "var(--bg)", color: "var(--muted)", border: "1px solid var(--bar-empty)", borderRadius: 6, fontFamily: "inherit", fontSize: 13, lineHeight: 1.5, padding: 10, boxSizing: "border-box" }} />
+              <button className="link-btn" style={{ fontSize: 14, marginTop: 6 }} onClick={() => navigator.clipboard.writeText(script)}>Copy script</button>
+            </div>
+          ) : null}
+        </Section>
+
         <Section title="Titles">
           {props.titles.map((t) => (
             <div key={t.id} onClick={() => setSelectedId(t.id)}
