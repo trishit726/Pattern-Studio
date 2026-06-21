@@ -1,0 +1,43 @@
+{
+  "name": "motion-graphics",
+  "version": "1.0.0",
+  "description": "A clean, neutral Remotion starter for designing animated motion graphics.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render",
+    "app": "vite",
+    "server": "node server/render-server.mjs",
+    "upgrade": "remotion upgrade",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@remotion/cli": "4.0.481",
+    "@remotion/google-fonts": "4.0.481",
+    "@remotion/media": "4.0.481",
+    "@remotion/player": "^4.0.481",
+    "@remotion/three": "^4.0.481",
+    "@remotion/transitions": "^4.0.481",
+    "@remotion/zod-types": "4.0.481",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.481",
+    "three": "^0.171.0",
+    "zod": "4.3.6"
+  },
+  "devDependencies": {
+    "@remotion/bundler": "^4.0.481",
+    "@remotion/renderer": "^4.0.481",
+    "@types/react": "19.0.0",
+    "@types/three": "^0.184.1",
+    "@vitejs/plugin-react": "^6.0.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "ffmpeg-static": "^5.3.0",
+    "ffprobe-static": "^3.1.0",
+    "typescript": "5.8.2",
+    "vite": "^8.0.16"
+  }
+}
