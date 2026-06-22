@@ -95,6 +95,7 @@ export const RemotionRoot: React.FC = () => {
           floodTile: 6,
           floodShapes: 5,
           floodPersist: true,
+          floodSolid: false,
         }}
       />
 

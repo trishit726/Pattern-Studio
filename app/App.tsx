@@ -241,6 +241,9 @@ export const App: React.FC = () => {
               <span style={{ fontSize: 10, color: "var(--muted-2)", textTransform: "uppercase", width: 34, paddingTop: 6 }}>{t.kind}</span>
               <textarea value={t.text} rows={t.kind === "block" ? 2 : 1} onChange={(e) => setTitle(t.id, { text: e.target.value })}
                 style={{ flex: 1, resize: "none", background: "var(--bg)", color: "var(--input-text)", border: "1px solid var(--bar-empty)", borderRadius: 4, fontFamily: "inherit", fontSize: 14, padding: 6 }} />
+              <label className="swatch" onClick={(e) => e.stopPropagation()} title="Box colour" style={{ width: 30, height: 30, flexShrink: 0, marginTop: 2, background: t.color ?? props.accent }}>
+                <input type="color" value={t.color ?? props.accent} onChange={(e) => setTitle(t.id, { color: e.target.value })} style={{ opacity: 0 }} />
+              </label>
               <button className="link-btn" style={{ fontSize: 20 }} onClick={(e) => { e.stopPropagation(); removeTitle(t.id); }}>×</button>
             </div>
           ))}
@@ -275,12 +278,16 @@ export const App: React.FC = () => {
         {props.intro === "flood" ? (
           <>
             <Section title="Flood Style">
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                <button className={(props.floodStyle ?? "random") === "random" ? "link-btn accent" : "link-btn"} onClick={() => set("floodStyle", "random")}>Random</button>
-                <button className={props.floodStyle === "sweep" ? "link-btn accent" : "link-btn"} onClick={() => set("floodStyle", "sweep")}>Sweep</button>
-                <button className={(props.floodPersist ?? true) ? "link-btn accent" : "link-btn"} onClick={() => set("floodPersist", !(props.floodPersist ?? true))}>{(props.floodPersist ?? true) ? "Stays" : "Clears"}</button>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                {(["random", "sweep", "radial", "rows", "columns", "edges"] as const).map((s) => (
+                  <button key={s} className={(props.floodStyle ?? "random") === s ? "link-btn accent" : "link-btn"} style={{ textTransform: "capitalize" }} onClick={() => set("floodStyle", s)}>{s}</button>
+                ))}
               </div>
-              <div style={{ ...S.status, marginTop: 8 }}>Random = pixels pop up scattered · Sweep = diagonal wipe · Stays/Clears = keep the grid or let it recede.</div>
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                <button className={(props.floodPersist ?? true) ? "link-btn accent" : "link-btn"} onClick={() => set("floodPersist", !(props.floodPersist ?? true))}>{(props.floodPersist ?? true) ? "Stays" : "Clears"}</button>
+                <button className={props.floodSolid ? "link-btn accent" : "link-btn"} onClick={() => set("floodSolid", !props.floodSolid)}>{props.floodSolid ? "Solid" : "Mixed"}</button>
+              </div>
+              <div style={{ ...S.status, marginTop: 8 }}>Fill order: random · diagonal sweep · radial · rows · columns · edges-in. Stays/Clears keeps or recedes; Mixed/Solid = palette or one colour.</div>
             </Section>
             <Section title="Flood Speed" value={props.floodSpeed ?? 5}><BarSlider value={props.floodSpeed ?? 5} min={1} max={10} onChange={(v) => set("floodSpeed", v)} /></Section>
             <Section title="Flood Tile Size" value={props.floodTile ?? 6}><BarSlider value={props.floodTile ?? 6} min={1} max={10} onChange={(v) => set("floodTile", v)} /></Section>

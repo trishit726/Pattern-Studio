@@ -14,18 +14,38 @@ import { Shape } from "./PatternField";
 
 const POP = 6; // frames a single tile takes to pop in/out
 const clamp = (v: number) => Math.max(0, Math.min(1, v));
+const hexLum = (hex: string): number => {
+  const h = hex.replace("#", "");
+  if (h.length < 6) return 0.5;
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+};
+
+// Fill-order (0..1) for each tile, per style — drives when a tile pops in.
+const orderFor = (style: string, c: number, r: number, cols: number, rows: number, rnd: number): number => {
+  const cx = (cols - 1) / 2, cy = (rows - 1) / 2;
+  switch (style) {
+    case "sweep": return (c + r) / Math.max(1, cols + rows - 2);
+    case "radial": return Math.hypot(c - cx, r - cy) / Math.max(1, Math.hypot(cx, cy));
+    case "rows": return r / Math.max(1, rows - 1);
+    case "columns": return c / Math.max(1, cols - 1);
+    case "edges": return Math.min(c, cols - 1 - c, r, rows - 1 - r) / Math.max(1, Math.min(cx, cy));
+    default: return rnd; // "random"
+  }
+};
 
 export const FloodField: React.FC<{
   accent: string;
   colors: string[];
   seed: number;
   begin?: number;
-  style?: "random" | "sweep";
+  style?: "random" | "sweep" | "radial" | "rows" | "columns" | "edges";
   speed?: number; // 1-10
   tile?: number; // 1-10
   shapes?: number; // 0-10
   persist?: boolean;
-}> = ({ accent, colors, seed, begin = 0, style = "random", speed = 5, tile = 6, shapes = 5, persist = true }) => {
+  solid?: boolean; // true = whole flood is one colour (the accent)
+}> = ({ accent, colors, seed, begin = 0, style = "random", speed = 5, tile = 6, shapes = 5, persist = true, solid = false }) => {
   const frame = useCurrentFrame() - begin;
   if (frame < 0) return null;
 
@@ -37,7 +57,10 @@ export const FloodField: React.FC<{
   const shapeProb = (shapes / 10) * 0.6;
 
   const rand = mulberry32((seed ^ 0x9e3779b9) >>> 0);
-  const palette = [accent, accent, accent, "#111111", "#ffffff", ...(colors.length ? colors : [accent])];
+  const palette = solid
+    ? [accent]
+    : [accent, accent, accent, "#111111", "#ffffff", ...(colors.length ? colors : [accent])];
+  const solidFg = hexLum(accent) > 0.55 ? "#111111" : "#ffffff";
   const cells: React.ReactNode[] = [];
 
   for (let r = 0; r < ROWS; r++) {
@@ -49,17 +72,17 @@ export const FloodField: React.FC<{
       const rDelay = rand(); // random appear order
       const rClear = rand(); // random clear order
 
-      const order = style === "sweep" ? (c + r) / (COLS + ROWS) : rDelay;
+      const order = orderFor(style, c, r, COLS, ROWS, rDelay);
       const inV = clamp((frame - order * FILL_SPREAD) / POP);
       let vis = inV;
       if (!persist) {
-        const clearOrder = style === "sweep" ? (c + r) / (COLS + ROWS) : rClear;
+        const clearOrder = style === "random" ? rClear : order;
         const outV = clamp((frame - (CLEAR_START + clearOrder * FILL_SPREAD)) / POP);
         vis = Math.min(inV, 1 - outV);
       }
       if (vis <= 0) continue;
 
-      const fg = color === "#111111" ? "#ffffff" : "#111111";
+      const fg = solid ? solidFg : color === "#111111" ? "#ffffff" : "#111111";
       cells.push(
         <div
           key={`${c}-${r}`}

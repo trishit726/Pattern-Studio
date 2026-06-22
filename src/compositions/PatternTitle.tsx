@@ -26,6 +26,7 @@ const titleSchema = z.object({
   x: z.number().min(0).max(1),
   y: z.number().min(0).max(1),
   size: z.number().min(8).max(400),
+  color: z.string().optional(), // per-title box colour (defaults to accent / black)
 });
 export type TitleItem = z.infer<typeof titleSchema>;
 
@@ -46,11 +47,12 @@ export const patternTitleSchema = z.object({
   sfx: z.boolean().optional(), // play a slap SFX on each title reveal
   audioReactive: z.boolean().optional(), // pulse the pattern to the music's energy
   intro: z.enum(["none", "flood"]).optional(), // "flood" = full-screen colour grid sweep
-  floodStyle: z.enum(["random", "sweep"]).optional(),
+  floodStyle: z.enum(["random", "sweep", "radial", "rows", "columns", "edges"]).optional(),
   floodSpeed: z.number().min(1).max(10).optional(),
   floodTile: z.number().min(1).max(10).optional(),
   floodShapes: z.number().min(0).max(10).optional(),
   floodPersist: z.boolean().optional(),
+  floodSolid: z.boolean().optional(), // true = whole flood one colour (the accent)
 });
 export type PatternTitleProps = z.infer<typeof patternTitleSchema>;
 
@@ -79,6 +81,7 @@ export const patternTitleDefaults: PatternTitleProps = {
   floodTile: 6,
   floodShapes: 5,
   floodPersist: true,
+  floodSolid: false,
 };
 
 // Approximate the bounding box of a title so the engine keeps patterns clear of it.
@@ -94,6 +97,12 @@ const rectOf = (t: TitleItem): TitleRect => {
   return { x: cx - w / 2, y: cy - h / 2, w, h };
 };
 
+const titleLum = (hex: string): number => {
+  const h = hex.replace("#", "");
+  if (h.length < 6) return 0.5;
+  return (0.299 * parseInt(h.slice(0, 2), 16) + 0.587 * parseInt(h.slice(2, 4), 16) + 0.114 * parseInt(h.slice(4, 6), 16)) / 255;
+};
+
 const TitleBlock: React.FC<{ t: TitleItem; accent: string; clip: string }> = ({ t, accent, clip }) => {
   const base: React.CSSProperties = {
     position: "absolute",
@@ -103,10 +112,14 @@ const TitleBlock: React.FC<{ t: TitleItem; accent: string; clip: string }> = ({ 
     clipPath: clip,
     WebkitClipPath: clip,
   };
+  // Per-title box colour: defaults to the brand accent (or black for labels);
+  // when a custom colour is set, the text auto-contrasts (dark on light, white on dark).
+  const boxColor = t.color ?? (t.kind === "label" ? "#111111" : accent);
+  const textColor = t.color ? (titleLum(boxColor) > 0.55 ? "#111111" : "#ffffff") : t.kind === "label" ? "#fff" : "#111";
   if (t.kind === "jp") {
     return (
       <div style={base}>
-        <span style={{ display: "inline-block", background: accent, color: "#111", fontFamily: JP, fontSize: t.size, fontWeight: 500, writingMode: "vertical-rl", letterSpacing: 4, padding: "16px 8px" }}>
+        <span style={{ display: "inline-block", background: boxColor, color: textColor, fontFamily: JP, fontSize: t.size, fontWeight: 500, writingMode: "vertical-rl", letterSpacing: 4, padding: "16px 8px" }}>
           {t.text}
         </span>
       </div>
@@ -115,7 +128,7 @@ const TitleBlock: React.FC<{ t: TitleItem; accent: string; clip: string }> = ({ 
   if (t.kind === "label") {
     return (
       <div style={base}>
-        <span style={{ display: "inline-block", background: "#111", color: "#fff", fontFamily: ANTON, fontSize: t.size, letterSpacing: 2, textTransform: "uppercase", padding: "5px 14px 8px" }}>
+        <span style={{ display: "inline-block", background: boxColor, color: textColor, fontFamily: ANTON, fontSize: t.size, letterSpacing: 2, textTransform: "uppercase", padding: "5px 14px 8px" }}>
           {t.text}
         </span>
       </div>
@@ -123,7 +136,7 @@ const TitleBlock: React.FC<{ t: TitleItem; accent: string; clip: string }> = ({ 
   }
   return (
     <div style={{ ...base, textAlign: "center" }}>
-      <span style={{ display: "inline-block", background: accent, color: "#111", fontFamily: ANTON, fontSize: t.size, lineHeight: 0.96, letterSpacing: 1, textTransform: "uppercase", padding: "8px 26px 16px" }}>
+      <span style={{ display: "inline-block", background: boxColor, color: textColor, fontFamily: ANTON, fontSize: t.size, lineHeight: 0.96, letterSpacing: 1, textTransform: "uppercase", padding: "8px 26px 16px" }}>
         {t.text.split("\n").map((l, i) => (
           <React.Fragment key={i}>{l}{i < t.text.split("\n").length - 1 && <br />}</React.Fragment>
         ))}
@@ -134,7 +147,7 @@ const TitleBlock: React.FC<{ t: TitleItem; accent: string; clip: string }> = ({ 
 
 export const PatternTitle: React.FC<PatternTitleProps> = ({
   titles, seed, density, proximity, accent, bgColor, bgImage, stagger, shapes, paint, colors, showGrid, music, sfx, audioReactive, intro,
-  floodStyle, floodSpeed, floodTile, floodShapes, floodPersist,
+  floodStyle, floodSpeed, floodTile, floodShapes, floodPersist, floodSolid,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -179,7 +192,7 @@ export const PatternTitle: React.FC<PatternTitleProps> = ({
       {intro === "flood" ? (
         <AbsoluteFill>
           <FloodField accent={accent} colors={colors} seed={seed} begin={2}
-            style={floodStyle} speed={floodSpeed} tile={floodTile} shapes={floodShapes} persist={floodPersist} />
+            style={floodStyle} speed={floodSpeed} tile={floodTile} shapes={floodShapes} persist={floodPersist} solid={floodSolid} />
         </AbsoluteFill>
       ) : null}
 
