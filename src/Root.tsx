@@ -19,6 +19,8 @@ import { Intro, introSchema, introDefaults, INTRO_DURATION } from "./composition
 import { PatternTitle, patternTitleSchema } from "./compositions/PatternTitle";
 import { Promo, promoSchema, promoDefaults, PROMO_DURATION } from "./compositions/Promo";
 import { Architecture, architectureSchema, architectureDefaults, ARCH_DURATION } from "./compositions/Architecture";
+import { ProblemStatement, problemSchema, problemDefaults, PROBLEM_DURATION } from "./compositions/ProblemStatement";
+import { Examples, examplesSchema, examplesDefaults, EXAMPLES_DURATION } from "./compositions/Examples";
 import { NameReveal, nameRevealSchema } from "./compositions/NameReveal";
 import { StyledNameReveal, styledNameRevealSchema } from "./compositions/StyledNameReveal";
 import { DesignerInJapan, designerInJapanSchema } from "./compositions/DesignerInJapan";
@@ -73,6 +75,28 @@ export const RemotionRoot: React.FC = () => {
         height={CANVAS.height}
         schema={architectureSchema}
         defaultProps={architectureDefaults}
+      />
+
+      <Composition
+        id="ProblemStatement"
+        component={ProblemStatement}
+        durationInFrames={PROBLEM_DURATION}
+        fps={FPS}
+        width={CANVAS.width}
+        height={CANVAS.height}
+        schema={problemSchema}
+        defaultProps={problemDefaults}
+      />
+
+      <Composition
+        id="Examples"
+        component={Examples}
+        durationInFrames={EXAMPLES_DURATION}
+        fps={FPS}
+        width={CANVAS.width}
+        height={CANVAS.height}
+        schema={examplesSchema}
+        defaultProps={examplesDefaults}
       />
 
       <Composition

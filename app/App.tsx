@@ -35,6 +35,7 @@ export const App: React.FC = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [ratio, setRatio] = useState("16:9");
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [script, setScript] = useState("");
@@ -155,6 +156,7 @@ export const App: React.FC = () => {
         const sendProps = { ...props, bgImage: imageData || props.bgImage.startsWith("blob:") ? "" : props.bgImage };
         body = { composition: "PatternTitle", props: sendProps, imageData, imageExt, duration, aiPaint };
       }
+      body.ratio = ratio;
       const res = await fetch(`${SERVER}/render`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json(); setVideoUrl(`${SERVER}${json.url}`); setStatus("Done ✓");
@@ -177,6 +179,15 @@ export const App: React.FC = () => {
         </div>
         <div style={S.row}>
           {comp === "PatternTitle" ? <button className="link-btn" onClick={() => set("seed", Math.floor(Math.random() * 1e9))}>Generate</button> : null}
+          <select value={ratio} onChange={(e) => setRatio(e.target.value)} title="Render aspect ratio" style={{ ...S.compSelect, fontSize: 14, padding: "5px 8px" }}>
+            <option value="16:9">16:9</option>
+            <option value="3:2">3:2</option>
+            <option value="4:3">4:3</option>
+            <option value="5:4">5:4</option>
+            <option value="1:1">1:1</option>
+            <option value="4:5">4:5 ↕</option>
+            <option value="9:16">9:16 ↕</option>
+          </select>
           <button className="link-btn accent" disabled={rendering} onClick={render}>{rendering ? "Rendering…" : "Render"}</button>
           {comp === "PatternTitle" ? <button className={props.showGrid ? "link-btn accent" : "link-btn"} onClick={() => set("showGrid", !props.showGrid)}>Grid</button> : null}
           {comp === "PatternTitle" ? <button className={props.intro === "flood" ? "link-btn accent" : "link-btn"} onClick={() => set("intro", props.intro === "flood" ? "none" : "flood")}>Flood</button> : null}

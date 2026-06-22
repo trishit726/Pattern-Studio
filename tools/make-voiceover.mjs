@@ -31,6 +31,17 @@ That scene drops straight into a live Remotion preview, where you can edit anyth
 When you're happy, one click sends it back — and the server renders your scene with Remotion, into a finished M P 4.
 From a sentence, to a video. Editor, server, A.I., and Remotion.`,
   },
+  problem: {
+    out: "problem-vo.mp3",
+    text: `Every brand needs motion. A title that moves. An intro that grabs attention. A logo that comes alive.
+But great motion graphics are locked behind a wall.
+To make a single animated title, you need a motion designer — and they are expensive. Hundreds of dollars, for a few seconds of video.
+Or, you learn the tools yourself. After Effects. Keyframes. Easing curves. That is weeks of practice, and the skills don't transfer.
+So most people settle. They grab a generic template that looks like everyone else's. They ship a plain, static title. Or, they skip motion entirely.
+For a founder launching a product... a student presenting a project... a small creator building a brand... high-end motion is simply out of reach.
+The tools are either too expensive, too hard, or too generic. There is no middle ground.
+That is the problem. Professional motion graphics should be as easy as describing what you want. And that is exactly what we set out to build.`,
+  },
 };
 
 const which = process.argv[2] || "promo";

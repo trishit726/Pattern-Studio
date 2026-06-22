@@ -15,12 +15,36 @@ import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { bundle } from "@remotion/bundler";
 import { selectComposition, renderMedia } from "@remotion/renderer";
+import { execFile } from "node:child_process";
+import ffmpegPath from "ffmpeg-static";
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), "../..");
 const OUT = path.join(ROOT, "out");
 const IMAGES = path.join(ROOT, "public", "images");
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(IMAGES, { recursive: true });
+
+// ── Aspect-ratio export ──────────────────────────────────────────────────────
+// Renders are 1920x1080; for other ratios we center-crop the finished MP4 with
+// ffmpeg so the design stays intact (no re-layout).
+const RATIOS = { "16:9": 16 / 9, "3:2": 3 / 2, "4:3": 4 / 3, "5:4": 5 / 4, "1:1": 1, "4:5": 4 / 5, "9:16": 9 / 16 };
+function cropToRatio(src, ratio, id) {
+  const ar = RATIOS[ratio];
+  if (!ar) return Promise.resolve(null);
+  const SW = 1920, SH = 1080, sAR = SW / SH;
+  let cw, ch;
+  if (ar <= sAR) { ch = SH; cw = Math.round(SH * ar); } else { cw = SW; ch = Math.round(SW / ar); }
+  cw -= cw % 2; ch -= ch % 2;
+  const x = Math.round((SW - cw) / 2), y = Math.round((SH - ch) / 2);
+  const rel = `pattern-${id}-${ratio.replace(":", "x")}.mp4`;
+  const outPath = path.join(OUT, rel);
+  return new Promise((resolve) => {
+    execFile(ffmpegPath, ["-y", "-i", src, "-vf", `crop=${cw}:${ch}:${x}:${y}`, "-c:a", "copy", "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p", outPath], (err) => {
+      if (err) { console.error("ffmpeg crop failed:", err.message); resolve(null); }
+      else resolve(`/out/${rel}`);
+    });
+  });
+}
 
 // ── ComfyUI (local, --api-only) painterly img2img ───────────────────────────
 // Start ComfyUI separately: it must be reachable at COMFY_URL. The workflow graph
@@ -285,7 +309,14 @@ app.post("/render", async (req, res) => {
       port: 3018,
     });
     console.log("Done:", outputLocation);
-    res.json({ url: `/out/pattern-${id}.mp4` });
+
+    let url = `/out/pattern-${id}.mp4`;
+    const ratio = req.body.ratio;
+    if (ratio && ratio !== "16:9") {
+      const cropped = await cropToRatio(outputLocation, ratio, id);
+      if (cropped) { url = cropped; console.log(`Cropped to ${ratio}`); }
+    }
+    res.json({ url });
   } catch (e) {
     console.error(e);
     res.status(500).send(String(e?.message ?? e));
