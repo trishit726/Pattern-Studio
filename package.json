@@ -26,6 +26,7 @@
     "@remotion/transitions": "^4.0.481",
     "@remotion/zod-types": "4.0.481",
     "dotenv": "^17.4.2",
+    "msedge-tts": "^2.0.6",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "remotion": "4.0.481",

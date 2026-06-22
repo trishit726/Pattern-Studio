@@ -17,6 +17,7 @@ import { CANVAS, FPS, seconds } from "./config";
 import { Assembly, assemblySchema, ASSEMBLY_DURATION } from "./compositions/Assembly";
 import { Intro, introSchema, introDefaults, INTRO_DURATION } from "./compositions/Intro";
 import { PatternTitle, patternTitleSchema } from "./compositions/PatternTitle";
+import { Promo, promoSchema, promoDefaults, PROMO_DURATION } from "./compositions/Promo";
 import { NameReveal, nameRevealSchema } from "./compositions/NameReveal";
 import { StyledNameReveal, styledNameRevealSchema } from "./compositions/StyledNameReveal";
 import { DesignerInJapan, designerInJapanSchema } from "./compositions/DesignerInJapan";
@@ -49,6 +50,17 @@ export const RemotionRoot: React.FC = () => {
           site: "yourname.com",
           music: "",
         }}
+      />
+
+      <Composition
+        id="Promo"
+        component={Promo}
+        durationInFrames={PROMO_DURATION}
+        fps={FPS}
+        width={CANVAS.width}
+        height={CANVAS.height}
+        schema={promoSchema}
+        defaultProps={promoDefaults}
       />
 
       <Composition
